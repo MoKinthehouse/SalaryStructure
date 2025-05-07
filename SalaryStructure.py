@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import openpyxl
+
 
 # Set page config
 st.set_page_config(page_title="Doctor Pricing Calculator", layout="centered")
@@ -66,16 +66,3 @@ st.write(f"**Workload Adjustment (Clients = {active_clients}):** +{int(workload_
 st.success(f"**Final Adjusted Salary: {final_salary:,.0f} EGP / month**")
 
 # Optional: export result
-if st.button("Export to Excel"):
-    df = pd.DataFrame({
-        'Doctor Level': [level],
-        'Work Type': [work_type],
-        'Monthly Hours': [monthly_hours],
-        'Hourly Rate': [hourly_rate],
-        'Base Salary': [base_salary],
-        'Remote Adj. %': [remote_adjustment * 100],
-        'Workload Adj. %': [workload_adjustment * 100],
-        'Final Salary': [final_salary]
-    })
-    df.to_excel("doctor_pricing_output.xlsx", index=False)
-    st.success("File exported as 'doctor_pricing_output.xlsx'")
