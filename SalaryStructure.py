@@ -1,68 +1,89 @@
 import streamlit as st
 import pandas as pd
 
+st.set_page_config(page_title="Doctor Visit Pricing Calculator", layout="centered")
 
-# Set page config
-st.set_page_config(page_title="Doctor Pricing Calculator", layout="centered")
-
-st.title("🩺 Salary Structure ")
+st.title("🩺 Doctor Visit Pricing Calculator")
 
 # Sidebar inputs
 st.sidebar.header("Input Parameters")
 
-# Experience level
-level = st.sidebar.selectbox("Select Doctor Level:", ["A (1-3 years)", "B (4-6 years)", "C (7-10 years)"])
+# Experience Level
+level = st.sidebar.selectbox("Select Experience Level:", ["Level A (1-3 years)", "Level B (4-6 years)", "Level C (7-10 years)"])
 
-# Work type
-work_type = st.sidebar.radio("Select Work Type:", ["Part-Time", "Full-Time"])
+# Status
+status = st.sidebar.radio("Select Status:", ["Exclusive", "Common"])
 
-# Monthly working hours
-monthly_hours = st.sidebar.number_input("Monthly Working Hours:", min_value=1, max_value=160, value=40)
+# Monthly Working Hours
+monthly_hours = st.sidebar.number_input("Monthly Working Hours:", min_value=1, max_value=170, value=40)
 
-# Distance (for remote adjustment)
+# Distance from City
 distance_km = st.sidebar.number_input("Distance from Main City (in km):", min_value=0, max_value=100, value=0)
 
-# Number of active clients
-active_clients = st.sidebar.number_input("Number of Active Clients:", min_value=0, max_value=20, value=2)
-
-# Set hourly rate based on level
-hourly_rates = {"A": 200, "B": 250, "C": 300}
-level_key = level[0]
-hourly_rate = hourly_rates[level_key]
-
-# Base salary calculation
-base_salary = hourly_rate * monthly_hours
-
-# Remote area adjustment (based on distance)
-if distance_km >= 21:
-    if distance_km < 30:
-        remote_adjustment = 0.15
-    elif distance_km < 40:
-        remote_adjustment = 0.20
-    else:
-        remote_adjustment = 0.25
+# Determine Tier based on hours
+if 8 <= monthly_hours <= 24:
+    tier = "Part-Time Tier 1"
+    rate_range = (275, 325)
+elif 25 <= monthly_hours <= 49:
+    tier = "Part-Time Tier 2"
+    rate_range = (325, 375)
+elif 50 <= monthly_hours <= 79:
+    tier = "Part-Time Tier 3"
+    rate_range = (375, 425)
+elif 80 <= monthly_hours <= 120:
+    tier = "Full-Time Tier 1"
+    rate_range = (300, 350)
+elif 121 <= monthly_hours <= 140:
+    tier = "Full-Time Tier 2"
+    rate_range = (350, 375)
+elif 141 <= monthly_hours <= 170:
+    tier = "Full-Time Tier 3"
+    rate_range = (375, 400)
 else:
-    remote_adjustment = 0.0
+    tier = "Undefined"
+    rate_range = (0, 0)
 
-# Workload adjustment
-workload_adjustment = (active_clients // 2) * 0.05
+# Base rate selection
+if status == "Exclusive":
+    base_rate = rate_range[1]  # max
+elif status == "Common":
+    if level.startswith("Level A"):
+        base_rate = rate_range[0]  # min
+    else:
+        base_rate = sum(rate_range) / 2  # avg
+else:
+    base_rate = rate_range[0]
 
-# Total adjustment
-total_adjustment = 1 + remote_adjustment + workload_adjustment
-final_salary = base_salary * total_adjustment
+# Remote adjustment
+if distance_km >= 21:
+    remote_bonus = 0.15
+else:
+    remote_bonus = 0.0
+
+# Final rate
+final_rate = base_rate * (1 + remote_bonus)
 
 # Output Section
-st.header("📊 Pricing Summary")
-st.write(f"**Doctor Level:** {level}")
-st.write(f"**Work Type:** {work_type}")
+st.header("📊 Visit Pricing Summary")
+st.write(f"**Experience Level:** {level}")
+st.write(f"**Status:** {status}")
 st.write(f"**Monthly Hours:** {monthly_hours} hrs")
-st.write(f"**Hourly Rate:** {hourly_rate} EGP")
-st.write(f"**Base Salary:** {base_salary:,.0f} EGP")
+st.write(f"**Tier:** {tier}")
+st.write(f"**Base Visit Rate:** {base_rate:.2f} EGP")
+st.write(f"**Remote Area Bonus:** {int(remote_bonus * 100)}%")
+st.success(f"**Final Visit Rate: {final_rate:.2f} EGP**")
 
-st.subheader("💡 Adjustments")
-st.write(f"**Remote Area Adjustment:** +{int(remote_adjustment * 100)}%")
-st.write(f"**Workload Adjustment (Clients = {active_clients}):** +{int(workload_adjustment * 100)}%")
+# Export to Excel
+if st.button("Export to Excel"):
+    df = pd.DataFrame({
+        'Experience Level': [level],
+        'Status': [status],
+        'Monthly Hours': [monthly_hours],
+        'Tier': [tier],
+        'Base Rate': [base_rate],
+        'Remote Bonus %': [remote_bonus * 100],
+        'Final Visit Rate': [final_rate]
+    })
+    df.to_excel("doctor_visit_pricing.xlsx", index=False)
+    st.success("Exported as 'doctor_visit_pricing.xlsx'")
 
-st.success(f"**Final Adjusted Salary: {final_salary:,.0f} EGP / month**")
-
-# Optional: export result
