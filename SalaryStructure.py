@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import openpyxl
 
 # Set page config
 st.set_page_config(page_title="Doctor Pricing Calculator", layout="centered")
